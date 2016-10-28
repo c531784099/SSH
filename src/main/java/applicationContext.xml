@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	">
+	<!-- 定义数据源 -->
+	<bean id="dataSource" class=" org.apache.commons.dbcp.BasicDataSource">
+		<property name="defaultAutoCommit" value="false"></property>
+		<property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
+		<property name="url" value="jdbc:mysql://localhost:3306/hibernateweb"></property>
+		<property name="username" value="root"></property>
+		<property name="password" value="root"></property>
+	</bean>
+
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+		<!-- 数据库的连接信息 -->
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- hibernate的配置信息 -->
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+			</props>
+		</property>
+		<!-- 加载映射文件 -->
+		<property name="mappingResources">
+			<list>
+				<value>com/bjsxt/pojo/User.hbm.xml</value>
+			</list>
+		</property>
+
+	</bean>
+
+	<!-- 事物管理器 -->
+	<bean id="txManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+
+	<!-- 定义通知 -->
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+
+		<tx:attributes>
+			<tx:method name="Find*" propagation="REQUIRED" />
+			<tx:method name="Save*" propagation="REQUIRED" />
+		</tx:attributes>
+
+	</tx:advice>
+	
+	<!-- 添加功能代码  Aop-->
+	
+
+	<!-- aop配置 添加 事物管理功能 -->
+	<aop:config>	
+		<aop:pointcut expression="execution(* com.bjsxt.daoimp.*.*(..))"
+			id="pointcut1" />
+			<!-- <aop:pointcut expression="execution(* com.bjsxt.servicedaoimp.*.*(..))" id="pointcut2"/> -->
+		
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut1" />
+      <!-- 定义切面类 基于 xml配置方式 -->
+     <!--  <aop:aspect ref="function">
+         <aop:before method="before" pointcut-ref="pointcut2"/>
+         <aop:after method="after" pointcut-ref="pointcut2"/>   
+      </aop:aspect> -->
+
+	</aop:config>
+
+	<!-- 使用扫描方式 使用spring容器 -->
+	<context:component-scan
+		base-package="com.bjsxt.servicedaoimp,com.bjsxt.daoimp,com.bjsxt.action,com.bjsxt.aop"></context:component-scan>
+    <!-- 基于注解   开启扫面注解 切面类 -->
+    <aop:aspectj-autoproxy ></aop:aspectj-autoproxy> 
+</beans>
